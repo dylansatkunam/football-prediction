@@ -27,6 +27,52 @@ To use FootballAi, you will need to have a data file containing past football re
 
 Once you have the data file, you can run the `footballai.py` script to train the model and generate prediction. The script will print the generated winner to the console.
 
+### Automatically build the dataset from NFL results
+
+The repository now includes `nfl_data_fetcher.py`, a helper utility that downloads historical head-to-head scores for any two NFL teams using ESPN's public schedule endpoint (no API key required). The script appends the scores to `data.txt` in the `team1_score,team2_score` format that the neural network expects.
+
+Run the tool from the project root:
+
+```bash
+python nfl_data_fetcher.py
+```
+
+You will be presented with a numbered list of all 32 franchises. Pick the two teams you want to analyse and optionally enter the seasons to include (defaults to the last five years). After the results have been added to `data.txt` you can launch the training script immediately when prompted, or exit and run `python footballai.py` later.
+
+The helper also exposes a few optional command-line flags so you can automate data pulls:
+
+```bash
+python nfl_data_fetcher.py --team1 1 --team2 2 --seasons 2020-2023
+```
+
+* `--team1` / `--team2` – select franchises by their numeric identifier (see the on-screen table).
+* `--seasons` – fetch a comma separated list (`2021,2023`) or range (`2019-2022`) of NFL seasons.
+* `--cache-dir` – path to a folder where downloaded ESPN schedule responses should be cached. When set (or when the `NFL_DATA_FETCHER_CACHE_DIR` environment variable is defined) the script reuses local JSON files instead of hitting the network.
+
+If you plan to refresh the dataset frequently, consider pointing `--cache-dir` to a folder such as `~/.cache/nfl_data_fetcher/` (create it if it does not exist). Cached responses are updated automatically whenever the script successfully contacts the ESPN API, so the tool works seamlessly even if the API is briefly unavailable during later runs.
+
+Use `--skip-train` if you only want to update the dataset without immediately re-running the neural network training script.
+
+## Cloning this repository
+
+If you have not worked with Git before, follow these steps to copy the project to your computer:
+
+1. [Install Git](https://git-scm.com/downloads) if it is not already available on your system.
+2. Open a terminal (PowerShell on Windows, Terminal on macOS/Linux) and run:
+
+   ```bash
+   git clone https://github.com/CorvusCodex/Football-ai-prediction.git
+   cd Football-ai-prediction
+   ```
+
+3. (Optional) Add your own remote if you are using a fork:
+
+   ```bash
+   git remote add origin <your-repo-url>
+   ```
+
+With the project cloned locally you can edit files, run the training scripts, and push changes back to your own repository with the usual Git workflow (`git add`, `git commit`, and `git push`).
+
 
 If dataset is needed you can order one from here
 https://www.buymeacoffee.com/CorvusCodex/
