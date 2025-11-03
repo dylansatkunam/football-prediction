@@ -27,6 +27,18 @@ To use FootballAi, you will need to have a data file containing past football re
 
 Once you have the data file, you can run the `footballai.py` script to train the model and generate prediction. The script will print the generated winner to the console.
 
+### Automatically build the dataset from NFL results
+
+The repository now includes `nfl_data_fetcher.py`, a helper utility that downloads historical head-to-head scores for any two NFL teams using ESPN's public schedule endpoint (no API key required). The script appends the scores to `data.txt` in the `team1_score,team2_score` format that the neural network expects.
+
+Run the tool from the project root:
+
+```bash
+python nfl_data_fetcher.py
+```
+
+You will be presented with a numbered list of all 32 franchises. Pick the two teams you want to analyse and optionally enter the seasons to include (defaults to the last five years). After the results have been added to `data.txt` you can launch the training script immediately when prompted, or exit and run `python footballai.py` later.
+
 
 If dataset is needed you can order one from here
 https://www.buymeacoffee.com/CorvusCodex/
