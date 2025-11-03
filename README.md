@@ -39,6 +39,22 @@ python nfl_data_fetcher.py
 
 You will be presented with a numbered list of all 32 franchises. Pick the two teams you want to analyse and optionally enter the seasons to include (defaults to the last five years). After the results have been added to `data.txt` you can launch the training script immediately when prompted, or exit and run `python footballai.py` later.
 
+The helper also exposes a few optional command-line flags so you can automate data pulls:
+
+```bash
+python nfl_data_fetcher.py --team1 1 --team2 2 --seasons 2020-2023
+```
+
+* `--team1` / `--team2` – select franchises by their numeric identifier (see the on-screen table).
+* `--seasons` – fetch a comma separated list (`2021,2023`) or range (`2019-2022`) of NFL seasons.
+* `--cache-dir` – path to a folder where downloaded ESPN schedule responses should be cached. When set (or when the `NFL_DATA_FETCHER_CACHE_DIR` environment variable is defined) the script reuses local JSON files instead of hitting the network. This repository ships with `sample_data/`, which contains a small cached example so the tool can be demonstrated in completely offline environments:
+
+```bash
+python nfl_data_fetcher.py --team1 1 --team2 2 --seasons 2022 --cache-dir sample_data --skip-train
+```
+
+Use `--skip-train` if you only want to update the dataset without immediately re-running the neural network training script.
+
 
 If dataset is needed you can order one from here
 https://www.buymeacoffee.com/CorvusCodex/

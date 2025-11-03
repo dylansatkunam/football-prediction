@@ -16,6 +16,7 @@ import os
 import subprocess
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, Iterable, List, Sequence, Tuple
 
 import json
@@ -26,6 +27,8 @@ from urllib.error import HTTPError, URLError
 
 DATA_FILE = "data.txt"
 FOOTBALL_AI_SCRIPT = "footballai.py"
+
+SCHEDULE_CACHE_ENVVAR = "NFL_DATA_FETCHER_CACHE_DIR"
 
 ESPN_SCHEDULE_URL = (
     "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team_id}/schedule"
@@ -84,7 +87,21 @@ class DataFetchError(RuntimeError):
     """Raised when the ESPN endpoint cannot be contacted or parsed."""
 
 
-def _request_schedule(team_id: str, season: int | None, season_type: int | None) -> dict:
+def _schedule_cache_path(
+    cache_dir: Path, team_id: str, season: int | None, season_type: int | None
+) -> Path:
+    season_label = str(season) if season is not None else "current"
+    season_type_label = str(season_type) if season_type is not None else "default"
+    filename = f"{team_id}_{season_label}_{season_type_label}.json"
+    return cache_dir / filename
+
+
+def _request_schedule(
+    team_id: str,
+    season: int | None,
+    season_type: int | None,
+    cache_dir: Path | None = None,
+) -> dict:
     """Retrieve the raw schedule payload for ``team_id``.
 
     Parameters
@@ -96,6 +113,13 @@ def _request_schedule(team_id: str, season: int | None, season_type: int | None)
     season_type:
         ``2`` for the regular season, ``3`` for playoffs. ``None`` lets ESPN decide.
     """
+
+    cache_path: Path | None = None
+    if cache_dir is not None:
+        cache_path = _schedule_cache_path(cache_dir, team_id, season, season_type)
+        if cache_path.exists():
+            with open(cache_path, "r", encoding="utf-8") as cached:
+                return json.load(cached)
 
     params = {}
     if season is not None:
@@ -118,9 +142,16 @@ def _request_schedule(team_id: str, season: int | None, season_type: int | None)
         ) from exc
 
     try:
-        return json.loads(payload.decode("utf-8"))
+        data = json.loads(payload.decode("utf-8"))
     except json.JSONDecodeError as exc:  # pragma: no cover - unexpected payload
         raise DataFetchError("Received invalid JSON from ESPN endpoint") from exc
+
+    if cache_path is not None:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(cache_path, "w", encoding="utf-8") as cached:
+            json.dump(data, cached, indent=2)
+
+    return data
 
 
 def fetch_head_to_head(
@@ -128,6 +159,7 @@ def fetch_head_to_head(
     team_two: Team,
     seasons: Sequence[int],
     season_types: Sequence[int] = DEFAULT_SEASON_TYPES,
+    cache_dir: Path | None = None,
 ) -> List[Tuple[str, int, int, str, str]]:
     """Fetch completed matches between ``team_one`` and ``team_two``.
 
@@ -139,7 +171,9 @@ def fetch_head_to_head(
 
     for season in seasons:
         for season_type in season_types:
-            payload = _request_schedule(team_one.espn_id, season, season_type)
+            payload = _request_schedule(
+                team_one.espn_id, season, season_type, cache_dir=cache_dir
+            )
             events = payload.get("events", [])
             for event in events:
                 event_id = event.get("id")
@@ -202,7 +236,10 @@ def append_results_to_dataset(path: str, results: Iterable[Tuple[str, int, int, 
     # Preserve the file's trailing newline state so appends remain tidy.
     with open(path, "rb") as existing_file:
         existing_file.seek(0, os.SEEK_END)
-        needs_newline = existing_file.tell() > 0
+        needs_newline = False
+        if existing_file.tell() > 0:
+            existing_file.seek(-1, os.SEEK_END)
+            needs_newline = existing_file.read(1) != b"\n"
 
     rows_written = 0
     with open(path, "a", encoding="utf-8") as handle:
@@ -213,6 +250,8 @@ def append_results_to_dataset(path: str, results: Iterable[Tuple[str, int, int, 
                 handle.write("\n")
             handle.write(f"{score_one},{score_two}")
             rows_written += 1
+        if rows_written > 0:
+            handle.write("\n")
     return rows_written
 
 
@@ -308,6 +347,16 @@ def _parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         action="store_true",
         help="Do not execute footballai.py after updating the dataset.",
     )
+    parser.add_argument(
+        "--cache-dir",
+        type=str,
+        help=(
+            "Optional directory containing cached ESPN schedule responses. "
+            "If provided (or set via the NFL_DATA_FETCHER_CACHE_DIR environment "
+            "variable), the script will prefer cached data and update the cache "
+            "whenever a network call succeeds."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -336,6 +385,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         if not team_two:
             team_two = _prompt_for_team("Select Team 2 by number: ")
 
+    cache_dir_value = args.cache_dir or os.environ.get(SCHEDULE_CACHE_ENVVAR)
+    cache_dir = Path(cache_dir_value).expanduser() if cache_dir_value else None
+
     try:
         seasons = parse_season_input(args.seasons)
     except ValueError as exc:
@@ -347,7 +399,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     print(f"Seasons: {', '.join(str(season) for season in seasons)}")
 
     try:
-        results = fetch_head_to_head(team_one, team_two, seasons)
+        results = fetch_head_to_head(
+            team_one, team_two, seasons, cache_dir=cache_dir
+        )
     except DataFetchError as exc:
         raise SystemExit(str(exc))
 
