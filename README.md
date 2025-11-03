@@ -55,6 +55,26 @@ python nfl_data_fetcher.py --team1 1 --team2 2 --seasons 2022 --cache-dir sample
 
 Use `--skip-train` if you only want to update the dataset without immediately re-running the neural network training script.
 
+## Cloning this repository
+
+If you have not worked with Git before, follow these steps to copy the project to your computer:
+
+1. [Install Git](https://git-scm.com/downloads) if it is not already available on your system.
+2. Open a terminal (PowerShell on Windows, Terminal on macOS/Linux) and run:
+
+   ```bash
+   git clone https://github.com/CorvusCodex/Football-ai-prediction.git
+   cd Football-ai-prediction
+   ```
+
+3. (Optional) Add your own remote if you are using a fork:
+
+   ```bash
+   git remote add origin <your-repo-url>
+   ```
+
+With the project cloned locally you can edit files, run the training scripts, and push changes back to your own repository with the usual Git workflow (`git add`, `git commit`, and `git push`).
+
 
 If dataset is needed you can order one from here
 https://www.buymeacoffee.com/CorvusCodex/
