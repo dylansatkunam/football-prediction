@@ -47,11 +47,9 @@ python nfl_data_fetcher.py --team1 1 --team2 2 --seasons 2020-2023
 
 * `--team1` / `--team2` – select franchises by their numeric identifier (see the on-screen table).
 * `--seasons` – fetch a comma separated list (`2021,2023`) or range (`2019-2022`) of NFL seasons.
-* `--cache-dir` – path to a folder where downloaded ESPN schedule responses should be cached. When set (or when the `NFL_DATA_FETCHER_CACHE_DIR` environment variable is defined) the script reuses local JSON files instead of hitting the network. This repository ships with `sample_data/`, which contains a small cached example so the tool can be demonstrated in completely offline environments:
+* `--cache-dir` – path to a folder where downloaded ESPN schedule responses should be cached. When set (or when the `NFL_DATA_FETCHER_CACHE_DIR` environment variable is defined) the script reuses local JSON files instead of hitting the network.
 
-```bash
-python nfl_data_fetcher.py --team1 1 --team2 2 --seasons 2022 --cache-dir sample_data --skip-train
-```
+If you plan to refresh the dataset frequently, consider pointing `--cache-dir` to a folder such as `~/.cache/nfl_data_fetcher/` (create it if it does not exist). Cached responses are updated automatically whenever the script successfully contacts the ESPN API, so the tool works seamlessly even if the API is briefly unavailable during later runs.
 
 Use `--skip-train` if you only want to update the dataset without immediately re-running the neural network training script.
 

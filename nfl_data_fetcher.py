@@ -397,10 +397,10 @@ def _parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         "--cache-dir",
         type=str,
         help=(
-            "Optional directory containing cached ESPN schedule responses. "
+            "Optional directory where ESPN schedule responses should be cached. "
             "If provided (or set via the NFL_DATA_FETCHER_CACHE_DIR environment "
-            "variable), the script will prefer cached data and update the cache "
-            "whenever a network call succeeds."
+            "variable), the script reuses existing JSON files and refreshes "
+            "them whenever a network call succeeds."
         ),
     )
     return parser.parse_args(argv)
