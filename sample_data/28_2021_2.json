@@ -1,0 +1,53 @@
+{
+  "events": [
+    {
+      "id": "401326551",
+      "name": "Washington Football Team at Seattle Seahawks",
+      "date": "2021-11-29T20:15Z",
+      "competitions": [
+        {
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "team": {"id": "28"},
+              "score": 17
+            },
+            {
+              "team": {"id": "26"},
+              "score": 15
+            }
+          ]
+        }
+      ]
+    }
+    ,
+    {
+      "id": "401326400",
+      "name": "Seattle Seahawks at Washington Football Team",
+      "date": "2021-09-12T17:00Z",
+      "competitions": [
+        {
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "team": {"id": "28"},
+              "score": "20"
+            },
+            {
+              "team": {"id": "26"},
+              "score": "17"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

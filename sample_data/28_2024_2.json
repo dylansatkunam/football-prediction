@@ -1,0 +1,40 @@
+{
+  "events": [
+    {
+      "id": "401671111",
+      "name": "Seattle Seahawks at Washington Commanders",
+      "date": "2024-10-20T17:00Z",
+      "competitions": [
+        {
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "team": {"id": "28"},
+              "score": {
+                "displayValue": "23",
+                "linescores": [
+                  {"value": 10},
+                  {"value": 13}
+                ]
+              }
+            },
+            {
+              "team": {"id": "26"},
+              "score": {
+                "displayValue": "21",
+                "linescores": [
+                  {"value": 7},
+                  {"value": 14}
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

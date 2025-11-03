@@ -17,7 +17,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Sequence, Tuple
 
 import json
 from urllib import parse as _urlparse
@@ -154,6 +154,60 @@ def _request_schedule(
     return data
 
 
+def _coerce_score(value: Any) -> int | None:
+    """Best-effort conversion of ESPN score payloads to integers.
+
+    The public schedule endpoint sometimes returns a simple string/number when a
+    game has completed, but other times the ``score`` field is a nested
+    dictionary containing the numeric value.  Future games may also emit an
+    empty string, ``None`` or other placeholder structures.  This helper walks
+    the common shapes and returns ``None`` whenever a reliable integer cannot be
+    produced.
+    """
+
+    if value is None:
+        return None
+
+    if isinstance(value, bool):
+        # Guard against booleans (which are ints) sneaking through from unrelated
+        # payload fields – treat them as missing values instead of 0/1 scores.
+        return None
+
+    if isinstance(value, int):
+        return value
+
+    if isinstance(value, float):
+        if value.is_integer():
+            return int(value)
+        return None
+
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            return None
+        try:
+            return int(stripped)
+        except ValueError:
+            return None
+
+    if isinstance(value, dict):
+        for key in ("value", "displayValue", "score", "total"):
+            if key in value:
+                coerced = _coerce_score(value[key])
+                if coerced is not None:
+                    return coerced
+        return None
+
+    if isinstance(value, (list, tuple)):
+        for item in value:
+            coerced = _coerce_score(item)
+            if coerced is not None:
+                return coerced
+        return None
+
+    return None
+
+
 def fetch_head_to_head(
     team_one: Team,
     team_two: Team,
@@ -194,15 +248,9 @@ def fetch_head_to_head(
                     # Opponent does not match or incomplete data
                     continue
 
-                score_one = team_one_entry.get("score")
-                score_two = team_two_entry.get("score")
+                score_one = _coerce_score(team_one_entry.get("score"))
+                score_two = _coerce_score(team_two_entry.get("score"))
                 if score_one is None or score_two is None:
-                    continue
-
-                try:
-                    score_one_int = int(score_one)
-                    score_two_int = int(score_two)
-                except ValueError:
                     continue
 
                 if event_id in seen_events:
@@ -211,9 +259,7 @@ def fetch_head_to_head(
 
                 event_name = event.get("name", "")
                 event_date = event.get("date", "")
-                results.append(
-                    (event_id, score_one_int, score_two_int, event_name, event_date)
-                )
+                results.append((event_id, score_one, score_two, event_name, event_date))
 
     results.sort(key=lambda item: item[4])
     return results
